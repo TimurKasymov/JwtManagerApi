@@ -12,16 +12,16 @@ namespace jwtapi
        public class JwtManager
        {
               private readonly IOptions<JwtSettings> jwtSettings;
+              private readonly ILogger<JwtManager> _logger;
 
-              public JwtManager(IOptions<JwtSettings> jwtSettings)
+              public JwtManager(IOptions<JwtSettings> jwtSettings, ILogger<JwtManager> logger)
               {
+                     this._logger = logger;
                      this.jwtSettings = jwtSettings;
               }
 
-              private SymmetricSecurityKey GetSecretKey()
-              {
-                     return new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings.Value.Secret));
-              }
+              private SymmetricSecurityKey GetSecretKey() => new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings.Value.Secret));
+              
               /// <summary>
               /// Generates JWT token based on received data
               /// </summary>
@@ -48,6 +48,11 @@ namespace jwtapi
                      return tokenHandler.WriteToken(token);
               }
 
+              /// <summary>
+              /// trys to validate given token
+              /// </summary>
+              /// <param name="token"></param>
+              /// <returns></returns>
               public bool ValidateToken(string token)
               {
                      var tokenHandler = new JwtSecurityTokenHandler();
@@ -65,14 +70,26 @@ namespace jwtapi
                      }
                      catch
                      {
+                            _logger.LogInformation("Given token failed JWT validation");
                             return false;
                      }
-                     
+
                      return true;
               }
 
-              public Dictionary<string, string> GetTokenClaims(){
-                
+              /// <summary>
+              /// Extracts claims data from token
+              /// </summary>
+              /// <param name="token"></param>
+              /// <returns></returns>
+              public List<ClaimProperty>? GetTokenClaims(string token)
+              {
+                     var tokenHandler = new JwtSecurityTokenHandler();
+                     var securityToken = tokenHandler.ReadToken(token) as JwtSecurityToken;
+                     if (securityToken == null)
+                            return null;
+                     var stringClaimValue = securityToken.Claims.Select(s => new ClaimProperty(s.Type, s.Value)).ToList();
+                     return stringClaimValue;
               }
        }
 }
