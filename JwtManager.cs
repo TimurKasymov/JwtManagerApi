@@ -21,7 +21,7 @@ namespace jwtapi
               }
 
               private SymmetricSecurityKey GetSecretKey() => new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings.Value.Secret));
-              
+
               /// <summary>
               /// Generates JWT token based on received data
               /// </summary>
@@ -33,7 +33,7 @@ namespace jwtapi
                      var tokenHandler = new JwtSecurityTokenHandler();
                      Claim[] claims = new Claim[payload.Count()];
                      foreach (var data in payload)
-                            claims.Append(new Claim(data.Key, data.Value));
+                            claims = claims.Append(new Claim(data.Key, data.Value)).ToArray();
 
                      var tokenDescriptor = new SecurityTokenDescriptor()
                      {
@@ -45,6 +45,8 @@ namespace jwtapi
                      };
 
                      var token = tokenHandler.CreateToken(tokenDescriptor);
+
+                     _logger.LogInformation("token generated");
                      return tokenHandler.WriteToken(token);
               }
 
@@ -67,6 +69,8 @@ namespace jwtapi
                                    ValidAudience = jwtSettings.Value.Audience,
                                    IssuerSigningKey = GetSecretKey()
                             }, out SecurityToken validatedToken);
+
+                            _logger.LogInformation("token validated");
                      }
                      catch
                      {
@@ -89,6 +93,9 @@ namespace jwtapi
                      if (securityToken == null)
                             return null;
                      var stringClaimValue = securityToken.Claims.Select(s => new ClaimProperty(s.Type, s.Value)).ToList();
+                     var ff = securityToken.Payload;
+
+                     _logger.LogInformation("data extracted from the token");
                      return stringClaimValue;
               }
        }
