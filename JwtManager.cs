@@ -93,7 +93,6 @@ namespace jwtapi
                      if (securityToken == null)
                             return null;
                      var stringClaimValue = securityToken.Claims.Select(s => new ClaimProperty(s.Type, s.Value)).ToList();
-                     var ff = securityToken.Payload;
 
                      _logger.LogInformation("data extracted from the token");
                      return stringClaimValue;
